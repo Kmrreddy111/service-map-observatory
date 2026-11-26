@@ -1,0 +1,30 @@
+name: Test, build and publish Rust lab
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.release.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: cargo test
+      - run: rustup target add wasm32-unknown-unknown
+      - run: cargo build --lib --release --target wasm32-unknown-unknown
+      - run: cp target/wasm32-unknown-unknown/release/service_map_observatory.wasm web/engine.wasm
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: release
+        uses: actions/deploy-pages@v4
